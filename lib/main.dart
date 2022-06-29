@@ -1,48 +1,76 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-void main() {
+Future main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
+
+  static const String title = 'Call Android Code';
 
   @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: MyHomePage(),
-    );
-  }
+  Widget build(BuildContext context) => MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: title,
+        theme: ThemeData.dark().copyWith(
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+              primary: Colors.blue,
+              minimumSize: const Size.fromHeight(52),
+              textStyle: const TextStyle(fontSize: 20),
+            ),
+          ),
+        ),
+        home: const MainPage(),
+      );
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key}) : super(key: key);
+class MainPage extends StatefulWidget {
+  const MainPage({Key? key}) : super(key: key);
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<MainPage> createState() => _MainPageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  static const platform = MethodChannel('samples.flutter.dev/battery');
+class _MainPageState extends State<MainPage> {
+  static const batteryChannel = MethodChannel('kentaShimizu.com/battery');
 
-  String _batteryLevel = 'Unknown battery level.';
+  String batteryLevel = 'Waiting...';
 
-  Future<void> _getBatteryLevel() async {
-    String batteryLevel;
-    try {
-      final int result = await platform.invokeMethod('getBatteryLevel');
-      batteryLevel = 'Battery level at $result % .';
-    } on PlatformException catch (e) {
-      batteryLevel = "Failed to get battery level: '${e.message}'.";
-    }
-    setState(() => _batteryLevel = batteryLevel);
+  Future getBatteryLevel() async {
+    final arguments = {'name': 'Sarah Abs'};
+    final String newBatteryLevel =
+        await batteryChannel.invokeMethod('getBatteryLevel', arguments);
+    setState(() => batteryLevel = newBatteryLevel);
   }
 
   @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Hello, world!'),
-    );
-  }
+  Widget build(BuildContext context) => Scaffold(
+        backgroundColor: Colors.black,
+        body: Container(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                batteryLevel,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 30, color: Colors.blue),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: getBatteryLevel,
+                child: const Text('Get Battery Level'),
+              ),
+            ],
+          ),
+        ),
+      );
 }
